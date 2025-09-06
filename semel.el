@@ -187,15 +187,26 @@
         `(jit-lock-bounds ,beg . ,end))
     (scan-error nil)))
 
+(defvar-local semel--extra-managed-props nil)
+
 ;;;###autoload
 (define-minor-mode semel-mode
   "Semantic highlighting for Emacs Lisp."
   :interactive (emacs-lisp-mode)
   (if semel-mode
-      (add-function :around (local 'font-lock-fontify-region-function)
-                    #'semel-fontify-region-advice)
+      (progn
+        (add-function :around (local 'font-lock-fontify-region-function)
+                      #'semel-fontify-region-advice)
+        (make-local-variable 'font-lock-extra-managed-props)
+        (dolist (prop '(mouse-face cursor-sensor-functions help-echo))
+          (unless (memq prop font-lock-extra-managed-props)
+            (push prop semel--extra-managed-props)
+            (push prop font-lock-extra-managed-props))))
     (remove-function (local 'font-lock-fontify-region-function)
-                     #'semel-fontify-region-advice)))
+                     #'semel-fontify-region-advice)
+    (dolist (prop semel--extra-managed-props)
+      (setq font-lock-extra-managed-props
+            (delq prop font-lock-extra-managed-props)))))
 
 (provide 'semel)
 ;;; semel.el ends here
