@@ -187,6 +187,7 @@
         `(jit-lock-bounds ,beg . ,end))
     (scan-error nil)))
 
+;;;###autoload
 (define-minor-mode semel-mode
   "Semantic highlighting for Emacs Lisp."
   :interactive (emacs-lisp-mode)
