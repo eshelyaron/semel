@@ -138,6 +138,9 @@
                                     (memq sym local-vars)))))
   :namespace 'variable)
 
+(declare-function semel--help-echo          "semel")
+(declare-function semel--function-help-echo "semel")
+
 (scope-define-symbol-type face ()
   :doc "Face names."
   :face 'semel-face
@@ -148,7 +151,7 @@
 
 (scope-define-symbol-type callable ()
   :doc "Abstract symbol type of function-like symbols."
-  :completion (cl-constantly #'semel--shorthand-aware-fboundp)
+  :completion (cl-constantly #'elisp--shorthand-aware-fboundp)
   :namespace 'function)
 
 (scope-define-symbol-type function (callable)
@@ -420,6 +423,11 @@
   :imenu "Charset"
   :namespace 'charset)
 
+(defun scope--completion-category-p (c)
+  (or (get c 'completion-category-documentation)
+      (alist-get c completion-category-defaults)
+      (alist-get c completion-category-overrides)))
+
 (scope-define-symbol-type completion-category ()
   :doc "Completion categories."
   :face 'font-lock-type-face
@@ -430,7 +438,7 @@
                     (format "Completion category `%S'.\n\n%s" sym doc)
                   "Completion category"))
             "Completion category"))
-  :completion (cl-constantly #'completion-category-p)
+  :completion (cl-constantly #'scope--completion-category-p)
   :namespace 'completion-category)
 
 (scope-define-symbol-type completion-category-definition ()
@@ -1565,7 +1573,7 @@ a (possibly empty) list of safe macros.")
        (or (eq scope-safe-macros t)
            (memq macro scope-safe-macros)
            (get macro 'safe-macro)
-           (trust-trusted-content-p))))
+           (trusted-content-p))))
 
 (defvar warning-minimum-log-level)
 

@@ -108,7 +108,7 @@
 
 (defun semel--help-echo (beg end prop str)
   (if-let ((sym (intern-soft (buffer-substring-no-properties beg end))))
-      (apply-partially #'elisp--help-echo-1 str sym prop)
+      (apply-partially #'semel--help-echo-1 str sym prop)
     str))
 
 (defun semel-local-references (pos)
