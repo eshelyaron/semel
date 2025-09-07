@@ -178,17 +178,23 @@
     (goto-char beg)
     (while (< (point) end) (ignore-errors (scope #'semel-fontify-symbol)))))
 
+(defvar font-lock-beg)
+(defvar font-lock-end)
+
+(defun semel-extend-region-to-whole-defuns ()
+  (let (changed)
+    (when-let ((new-beg (syntax-ppss-toplevel-pos (syntax-ppss font-lock-beg))))
+      (setq font-lock-beg new-beg changed t))
+    (when-let ((beg-of-end (syntax-ppss-toplevel-pos (syntax-ppss font-lock-end)))
+               (new-end (ignore-error scan-error (scan-sexps beg-of-end 1))))
+      (setq font-lock-end new-end changed t))
+    changed))
+
 (defun semel-fontify-region-advice (orig beg end &optional verbose)
-  (condition-case nil
-      (let ((beg (save-excursion (goto-char beg) (beginning-of-defun)
-                                 (point)))
-            (end (save-excursion (goto-char end) (end-of-defun)
-                                 (skip-chars-backward " \t\n")
-                                 (point))))
-        (funcall orig beg end verbose)
-        (semel-fontify-region beg end)
-        `(jit-lock-bounds ,beg . ,end))
-    (scan-error nil)))
+  (pcase (funcall orig beg end verbose)
+    (`(jit-lock-bounds ,beg1 . ,end1) (setq beg beg1 end end1)))
+  (semel-fontify-region beg end)
+  `(jit-lock-bounds ,beg . ,end))
 
 (defvar-local semel--extra-managed-props nil)
 
@@ -204,12 +210,16 @@
         (dolist (prop '(mouse-face cursor-sensor-functions help-echo))
           (unless (memq prop font-lock-extra-managed-props)
             (push prop semel--extra-managed-props)
-            (push prop font-lock-extra-managed-props))))
+            (push prop font-lock-extra-managed-props)))
+        (add-hook 'font-lock-extend-region-functions
+                  #'semel-extend-region-to-whole-defuns nil t))
     (remove-function (local 'font-lock-fontify-region-function)
                      #'semel-fontify-region-advice)
     (dolist (prop semel--extra-managed-props)
       (setq font-lock-extra-managed-props
-            (delq prop font-lock-extra-managed-props)))))
+            (delq prop font-lock-extra-managed-props)))
+    (remove-hook 'font-lock-extend-region-functions
+                 #'semel-extend-region-to-whole-defuns t)))
 
 (provide 'semel)
 ;;; semel.el ends here
