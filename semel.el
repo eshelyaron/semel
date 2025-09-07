@@ -38,7 +38,9 @@
   "Semantic highlight for Emacs Lisp."
   :group 'lisp)
 
-(defface semel-symbol-at-mouse '((t :background "#fff6d8"))
+(defface semel-symbol-at-mouse
+  '((((background light)) :background "#fff6d8")
+    (((background dark))  :background "#00422a"))
   "Face for highlighting the symbol at mouse in Emacs Lisp code.")
 
 (defface semel-free-variable '((t :inherit underline))
