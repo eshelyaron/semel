@@ -105,12 +105,12 @@
       (buffer-string))))
 
 (defun semel--help-echo-1 (str sym prop &rest _)
-  (if-let ((doc (documentation-property sym prop t)))
+  (if-let* ((doc (documentation-property sym prop t)))
       (format "%s `%S'.\n\n%s" str sym doc)
     str))
 
 (defun semel--help-echo (beg end prop str)
-  (if-let ((sym (intern-soft (buffer-substring-no-properties beg end))))
+  (if-let* ((sym (intern-soft (buffer-substring-no-properties beg end))))
       (apply-partially #'semel--help-echo-1 str sym prop)
     str))
 
@@ -154,7 +154,7 @@
 (defun semel--annotate-symbol-with-help-echo (type beg end def)
   (put-text-property
    beg end 'help-echo
-   (when-let ((fun (scope-get-symbol-type-property type :help)))
+   (when-let* ((fun (scope-get-symbol-type-property type :help)))
      (funcall fun beg end def))))
 
 (defun semel-fontify-symbol (type sym len id &optional def)
@@ -183,10 +183,10 @@
 
 (defun semel-extend-region-to-whole-defuns ()
   (let (changed)
-    (when-let ((new-beg (syntax-ppss-toplevel-pos (syntax-ppss font-lock-beg))))
+    (when-let* ((new-beg (syntax-ppss-toplevel-pos (syntax-ppss font-lock-beg))))
       (setq font-lock-beg new-beg changed t))
-    (when-let ((beg-of-end (syntax-ppss-toplevel-pos (syntax-ppss font-lock-end)))
-               (new-end (ignore-error scan-error (scan-sexps beg-of-end 1))))
+    (when-let* ((beg-of-end (syntax-ppss-toplevel-pos (syntax-ppss font-lock-end)))
+                (new-end (ignore-error scan-error (scan-sexps beg-of-end 1))))
       (setq font-lock-end new-end changed t))
     changed))
 

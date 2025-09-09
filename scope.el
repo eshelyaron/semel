@@ -26,6 +26,8 @@
 
 ;;; Code:
 
+(require 'cl-lib)
+
 (defun scope--define-symbol-type (name parents props)
   (put name 'scope-parent-types parents)
   (put name 'scope-type-properties props)
@@ -43,9 +45,9 @@
                    (more nil)
                    (done nil))
     (or (plist-get (get current 'scope-type-properties) prop)
-        (when-let ((next (car parents)))
+        (when-let* ((next (car parents)))
           (loop (car parents) (get next 'scope-parent-types) (append (cdr parents) more) done))
-        (when-let ((next (car more)))
+        (when-let* ((next (car more)))
           (loop next (let (res)
                        (dolist (per (get next 'scope-parent-types))
                          (unless (memq per done)
@@ -71,8 +73,8 @@
 (defun scope-describe-symbol-type (type)
   (interactive (list (scope-read-symbol-type
                       "Describe symbol type"
-                      (when-let ((def (symbol-at-point))
-                                 ((scope-symbol-type-p def)))
+                      (when-let* ((def (symbol-at-point))
+                                  ((scope-symbol-type-p def)))
                         def))))
   (when (stringp type) (setq type (intern type)))
   (let ((help-buffer-under-preparation t))
@@ -86,7 +88,7 @@
                 (substitute-quotes
                  (or (scope-get-symbol-type-property type :doc)
                      "Undocumented.")))
-        (when-let ((parents (get type 'scope-parent-types)))
+        (when-let* ((parents (get type 'scope-parent-types)))
           (insert "\n\nParent types: "
                   (mapconcat (lambda (parent)
                                (let ((name (symbol-name parent)))
@@ -125,10 +127,10 @@
            ((equal beg def) "Local variable definition")
            (def             "Local variable")
            (t
-            (if-let ((sym (intern (buffer-substring-no-properties beg end))))
+            (if-let* ((sym (intern (buffer-substring-no-properties beg end))))
                 (lambda (&rest _)
                   (let ((val (if (boundp sym) (truncate-string-to-width (prin1-to-string (symbol-value sym)) 60 nil nil t) "#<unbound>")))
-                    (if-let ((doc (documentation-property sym 'variable-documentation t)))
+                    (if-let* ((doc (documentation-property sym 'variable-documentation t)))
                         (format "Special variable `%S'.\n\nValue: %s\n\n%s" sym val doc)
                       (format "Special variable `%S'.\n\nValue: %s" sym val))))
               "Special variable"))))
@@ -160,7 +162,7 @@
   :help (lambda (beg end def)
           (cond ((equal beg def) "Local function definition")
                 (def             "Local function call")
-                (t (if-let ((sym (intern-soft (buffer-substring-no-properties beg end))))
+                (t (if-let* ((sym (intern-soft (buffer-substring-no-properties beg end))))
                        (apply-partially #'semel--function-help-echo sym)
                      "Function call")))))
 
@@ -171,7 +173,7 @@
   :doc "Functions that do not return."
   :face 'semel-non-local-exit
   :help (lambda (beg end _def)
-          (if-let ((sym (intern-soft (buffer-substring-no-properties beg end))))
+          (if-let* ((sym (intern-soft (buffer-substring-no-properties beg end))))
               (apply-partially #'semel--function-help-echo sym)
             "Non-local exit")))
 
@@ -179,7 +181,7 @@
   :doc "Macro names."
   :face 'semel-macro-call
   :help (lambda (beg end _def)
-          (if-let ((sym (intern-soft (buffer-substring-no-properties beg end))))
+          (if-let* ((sym (intern-soft (buffer-substring-no-properties beg end))))
               (apply-partially #'semel--function-help-echo sym)
             "Macro call")))
 
@@ -187,7 +189,7 @@
   :doc "Special form names."
   :face 'semel-special-form
   :help (lambda (beg end _def)
-          (if-let ((sym (intern-soft (buffer-substring-no-properties beg end))))
+          (if-let* ((sym (intern-soft (buffer-substring-no-properties beg end))))
               (apply-partially #'semel--function-help-echo sym)
             "Special form")))
 
@@ -276,7 +278,7 @@
   :doc "`condition-case' conditions."
   :face 'semel-condition
   :help (lambda (beg end _def)
-          (if-let ((sym (intern (buffer-substring-no-properties beg end))))
+          (if-let* ((sym (intern (buffer-substring-no-properties beg end))))
               (lambda (&rest _)
                 (let ((msg (get sym 'error-message)))
                   (apply #'concat
@@ -330,9 +332,9 @@
   :doc "Major mode names."
   :face 'semel-major-mode-name
   :help (lambda (beg end _def)
-          (if-let ((sym (intern (buffer-substring-no-properties beg end))))
+          (if-let* ((sym (intern (buffer-substring-no-properties beg end))))
               (lambda (&rest _)
-                (if-let ((doc (documentation sym)))
+                (if-let* ((doc (documentation sym)))
                     (format "Major mode `%S'.\n\n%s" sym doc)
                   "Major mode"))
             "Major mode"))
@@ -363,14 +365,14 @@
   :doc "OClosure type names."
   :face 'font-lock-type-face
   :help (lambda (beg end _def)
-          (if-let ((sym (intern (buffer-substring-no-properties beg end))))
+          (if-let* ((sym (intern (buffer-substring-no-properties beg end))))
               (lambda (&rest _)
-                (if-let ((doc (oclosure--class-docstring (get sym 'cl--class))))
+                (if-let* ((doc (oclosure--class-docstring (get sym 'cl--class))))
                     (format "OClosure type `%S'.\n\n%s" sym doc)
                   "OClosure type"))
             "OClosure type"))
   :completion (cl-constantly (lambda (sym)
-                            (oclosure--class-p (get sym 'cl--class))))
+                               (oclosure--class-p (get sym 'cl--class))))
   :namespace 'oclosure)
 
 (scope-define-symbol-type defoclosure ()
@@ -385,9 +387,9 @@
   :doc "Coding system names."
   :face 'font-lock-type-face
   :help (lambda (beg end _def)
-          (if-let ((sym (intern (buffer-substring-no-properties beg end))))
+          (if-let* ((sym (intern (buffer-substring-no-properties beg end))))
               (lambda (&rest _)
-                (if-let ((doc (coding-system-doc-string sym)))
+                (if-let* ((doc (coding-system-doc-string sym)))
                     (format "Coding system `%S'.\n\n%s" sym doc)
                   "Coding system"))
             "Coding system"))
@@ -406,9 +408,9 @@
   :doc "Charset names."
   :face 'font-lock-type-face
   :help (lambda (beg end _def)
-          (if-let ((sym (intern (buffer-substring-no-properties beg end))))
+          (if-let* ((sym (intern (buffer-substring-no-properties beg end))))
               (lambda (&rest _)
-                (if-let ((doc (charset-description sym)))
+                (if-let* ((doc (charset-description sym)))
                     (format "Charset `%S'.\n\n%s" sym doc)
                   "Charset"))
             "Charset"))
@@ -432,9 +434,9 @@
   :doc "Completion categories."
   :face 'font-lock-type-face
   :help (lambda (beg end _def)
-          (if-let ((sym (intern (buffer-substring-no-properties beg end))))
+          (if-let* ((sym (intern (buffer-substring-no-properties beg end))))
               (lambda (&rest _)
-                (if-let ((doc (get sym 'completion-category-documentation)))
+                (if-let* ((doc (get sym 'completion-category-documentation)))
                     (format "Completion category `%S'.\n\n%s" sym doc)
                   "Completion category"))
             "Completion category"))
@@ -478,7 +480,7 @@
   "Return new local context with SYM bound at POS.
 
 Optional argument LOCAL is a local context to extend."
-  (cons (cons sym (or pos (cons 'gen (incf scope-counter)))) local))
+  (cons (cons sym (or pos (cons 'gen (cl-incf scope-counter)))) local))
 
 (defsubst scope-sym-pos (sym)
   (when (symbol-with-pos-p sym) (symbol-with-pos-pos sym)))
@@ -556,8 +558,8 @@ Optional argument LOCAL is a local context to extend."
   (let ((l local))
     (when (listp args)
       (dolist (arg args)
-        (when-let ((bare (bare-symbol arg))
-                   (beg (scope-sym-pos arg)))
+        (when-let* ((bare (bare-symbol arg))
+                    (beg (scope-sym-pos arg)))
           (unless (memq bare '(&optional &rest))
             (setq l (scope-local-new bare beg l))))))
     ;; Handle docstring.
@@ -571,18 +573,18 @@ Optional argument LOCAL is a local context to extend."
       (setq body (cdr body)))
      ((stringp (car body)) (setq body (cdr body))))
     ;; Handle `declare'.
-    (when-let ((form (car body))
-               (decl (car-safe form))
-               ((or (symbol-with-pos-p decl)
-                    (symbolp decl)))
-               ((eq (bare-symbol decl) 'declare)))
+    (when-let* ((form (car body))
+                (decl (car-safe form))
+                ((or (symbol-with-pos-p decl)
+                     (symbolp decl)))
+                ((eq (bare-symbol decl) 'declare)))
       (when (symbol-with-pos-p decl)
         (scope-report 'macro
                       (symbol-with-pos-pos decl)
                       (length (symbol-name (bare-symbol decl)))))
       (dolist (spec (cdr form))
-        (when-let ((head (car-safe spec))
-                   (bare (scope-sym-bare head)))
+        (when-let* ((head (car-safe spec))
+                    (bare (scope-sym-bare head)))
           (when (symbol-with-pos-p head)
             (scope-report 'declaration
                           (symbol-with-pos-pos head)
@@ -590,11 +592,11 @@ Optional argument LOCAL is a local context to extend."
           (cl-case bare
             (completion (scope-sharpquote local (cadr spec)))
             (interactive-only
-             (when-let ((bare (scope-sym-bare (cadr spec)))
-                        ((not (eq bare t))))
+             (when-let* ((bare (scope-sym-bare (cadr spec)))
+                         ((not (eq bare t))))
                (scope-sharpquote local (cadr spec))))
             (obsolete
-             (when-let ((bare (scope-sym-bare (cadr spec))))
+             (when-let* ((bare (scope-sym-bare (cadr spec))))
                (scope-sharpquote local (cadr spec))))
             ((compiler-macro gv-expander gv-setter)
              ;; Use the extended lexical environment `l'.
@@ -602,17 +604,17 @@ Optional argument LOCAL is a local context to extend."
             (modes (mapc #'scope-major-mode-name (cdr spec)))
             (interactive-args
              (dolist (arg-form (cdr spec))
-               (when-let ((arg (car-safe arg-form)))
+               (when-let* ((arg (car-safe arg-form)))
                  (scope-s l arg)
                  (when (consp (cdr arg-form))
                    (scope-1 local (cadr arg-form)))))))))
       (setq body (cdr body)))
     ;; Handle `interactive'.
-    (when-let ((form (car body))
-               (intr (car-safe form))
-               ((or (symbol-with-pos-p intr)
-                    (symbolp intr)))
-               ((eq (bare-symbol intr) 'interactive)))
+    (when-let* ((form (car body))
+                (intr (car-safe form))
+                ((or (symbol-with-pos-p intr)
+                     (symbolp intr)))
+                ((eq (bare-symbol intr) 'interactive)))
       (scope-interactive local intr (cadar body) (cddar body))
       (setq body (cdr body)))
     ;; Handle ARGS.
@@ -630,8 +632,8 @@ Optional argument LOCAL is a local context to extend."
     (scope-n l body)))
 
 (defun scope-defun (local name args body)
-  (when-let ((beg (scope-sym-pos name))
-             (bare (scope-sym-bare name)))
+  (when-let* ((beg (scope-sym-pos name))
+              (bare (scope-sym-bare name)))
     (scope-report
      (let ((tmp body))
        (when (stringp (car-safe tmp)) (pop tmp))
@@ -655,8 +657,8 @@ Optional argument LOCAL is a local context to extend."
       (scope-1 local val))))
 
 (defun scope-defvar (local name init)
-  (when-let ((beg (scope-sym-pos name))
-             (bare (scope-sym-bare name)))
+  (when-let* ((beg (scope-sym-pos name))
+              (bare (scope-sym-bare name)))
     (scope-report 'defvar beg (length (symbol-name bare))))
   (scope-1 local init))
 
@@ -726,8 +728,8 @@ Optional argument LOCAL is a local context to extend."
     (scope-n local body)))
 
 (defun scope-return-from (local name result)
-  (when-let ((bare (and (symbol-with-pos-p name) (bare-symbol name)))
-             (pos (alist-get bare scope-block-alist)))
+  (when-let* ((bare (and (symbol-with-pos-p name) (bare-symbol name)))
+              (pos (alist-get bare scope-block-alist)))
     (scope-report 'block
                   (symbol-with-pos-pos name) (length (symbol-name bare)) pos))
   (scope-1 local result))
@@ -758,8 +760,8 @@ Optional argument LOCAL is a local context to extend."
 
 (defun scope-loop-for-to (local0 local expr rest)
   (scope-1 local0 expr)
-  (when-let ((bare (scope-sym-bare (car rest)))
-             (more (cdr rest)))
+  (when-let* ((bare (scope-sym-bare (car rest)))
+              (more (cdr rest)))
     (cond
      ((eq bare 'by)
       (scope-loop-for-by local0 local (car more) (cdr more)))
@@ -767,8 +769,8 @@ Optional argument LOCAL is a local context to extend."
 
 (defun scope-loop-for-from (local0 local expr rest)
   (scope-1 local0 expr)
-  (when-let ((bare (scope-sym-bare (car rest)))
-             (more (cdr rest)))
+  (when-let* ((bare (scope-sym-bare (car rest)))
+              (more (cdr rest)))
     (cond
      ((memq bare '(to upto downto below above))
       (scope-loop-for-to local0 local (car more) (cdr more)))
@@ -778,8 +780,8 @@ Optional argument LOCAL is a local context to extend."
 
 (defun scope-loop-for-= (local0 local expr rest)
   (scope-1 local0 expr)
-  (when-let ((bare (scope-sym-bare (car rest)))
-             (more (cdr rest)))
+  (when-let* ((bare (scope-sym-bare (car rest)))
+              (more (cdr rest)))
     (cond
      ((eq bare 'then)
       (scope-loop-for-by local0 local (car more) (cdr more)))
@@ -795,21 +797,21 @@ Optional argument LOCAL is a local context to extend."
 
 (defun scope-loop-for-being-the-hash-keys-of (local0 local expr rest)
   (scope-1 local0 expr)
-  (when-let ((bare (scope-sym-bare (car rest)))
-             (more (cdr rest)))
+  (when-let* ((bare (scope-sym-bare (car rest)))
+              (more (cdr rest)))
     (cond
      ((eq bare 'using)
       (scope-loop-for-being-the-hash-keys-of-using local (car more) (cdr more)))
      (t (scope-loop-for-and local rest)))))
 
 (defun scope-loop-for-being-the-hash-keys (local0 local word rest)
-  (when-let ((bare (scope-sym-bare word)))
+  (when-let* ((bare (scope-sym-bare word)))
     (cond
      ((eq bare 'of)
       (scope-loop-for-being-the-hash-keys-of local0 local (car rest) (cdr rest))))))
 
 (defun scope-loop-for-being-the (local0 local word rest)
-  (when-let ((bare (scope-sym-bare word)))
+  (when-let* ((bare (scope-sym-bare word)))
     (cond
      ((memq bare '(buffer buffers))
       (scope-loop-for-and local rest))
@@ -834,8 +836,8 @@ Optional argument LOCAL is a local context to extend."
         (when beg
           (scope-report 'variable beg (length (symbol-name bare)) beg))
         (scope-loop-for local0 (scope-local-new bare beg local) (cdr-safe vars) rest))
-    (when-let ((bare (scope-sym-bare (car rest)))
-               (more (cdr rest)))
+    (when-let* ((bare (scope-sym-bare (car rest)))
+                (more (cdr rest)))
       (cond
        ((memq bare '(from upfrom downfrom))
         (scope-loop-for-from local0 local (car more) (cdr more)))
@@ -908,7 +910,7 @@ Optional argument LOCAL is a local context to extend."
       (scope-loop local rest))))
 
 (defun scope-loop-finally (local next rest)
-  (if-let ((bare (scope-sym-bare next)))
+  (if-let* ((bare (scope-sym-bare next)))
       (cond
        ((eq bare 'do)
         (scope-loop-do local (car rest) (cdr rest)))
@@ -938,11 +940,11 @@ Optional argument LOCAL is a local context to extend."
 
 (defun scope-loop-end (local rest)
   (let ((scope-loop-if-depth (1- scope-loop-if-depth)))
-    (unless (minusp scope-loop-if-depth)
+    (unless (cl-minusp scope-loop-if-depth)
       (scope-loop local rest))))
 
 (defun scope-loop-and (local rest)
-  (when (plusp scope-loop-if-depth) (scope-loop local rest)))
+  (when (cl-plusp scope-loop-if-depth) (scope-loop local rest)))
 
 (defun scope-loop (local forms)
   (when forms
@@ -981,8 +983,8 @@ Optional argument LOCAL is a local context to extend."
         (scope-1 local (cadr binding))))
     (let ((l local))
       (dolist (binding bindings)
-        (when-let ((sym (car (ensure-list binding)))
-                   (bare (scope-sym-bare sym)))
+        (when-let* ((sym (car (ensure-list binding)))
+                    (bare (scope-sym-bare sym)))
           (setq l (scope-local-new bare (scope-sym-pos sym) l))))
       (let ((scope-flet-alist (scope-local-new bare beg scope-flet-alist)))
         (scope-n l body)))))
@@ -1017,14 +1019,14 @@ Optional argument LOCAL is a local context to extend."
                         group submatch
                         group-n submatch-n))
           (scope-rx local (cdr regexp)))))
-    (when-let (((symbol-with-pos-p regexp))
-               (bare (scope-sym-bare regexp)))
+    (when-let* (((symbol-with-pos-p regexp))
+                (bare (scope-sym-bare regexp)))
       (scope-report 'rx-construct
                     (symbol-with-pos-pos regexp) (length (symbol-name bare))
                     (alist-get bare scope-rx-alist)))))
 
 (defun scope-rx-define (local name rest)
-  (when-let ((bare (scope-sym-bare name)))
+  (when-let* ((bare (scope-sym-bare name)))
     (scope-report 'rx-construct
                   (symbol-with-pos-pos name) (length (symbol-name bare)) nil))
   (if (not (cdr rest))
@@ -1042,18 +1044,18 @@ Optional argument LOCAL is a local context to extend."
                      (scope-report 'ampersand beg len)
                    (scope-report 'rx-construct beg len beg))))))
       (dolist (arg args)
-        (when-let ((bare (bare-symbol arg))
-                   (beg (scope-sym-pos arg)))
+        (when-let* ((bare (bare-symbol arg))
+                    (beg (scope-sym-pos arg)))
           (unless (memq bare '(&optional &rest))
             (setq l (scope-local-new bare beg l)))))
       (let ((scope-rx-alist l))
         (scope-rx-1 local rx)))))
 
 (defun scope-rx-let (local bindings body)
-  (if-let ((binding (car bindings)))
+  (if-let* ((binding (car bindings)))
       (let ((name (car binding)) (rest (cdr binding)))
-        (when-let ((bare (scope-sym-bare name))
-                   (beg (symbol-with-pos-pos name)))
+        (when-let* ((bare (scope-sym-bare name))
+                    (beg (symbol-with-pos-pos name)))
           (scope-report 'rx-construct
                         beg (length (symbol-name bare)) beg))
         (if (cdr rest)
@@ -1070,8 +1072,8 @@ Optional argument LOCAL is a local context to extend."
                              (scope-report 'ampersand beg len)
                            (scope-report 'rx-construct beg len beg))))))
               (dolist (arg args)
-                (when-let ((bare (bare-symbol arg))
-                           (beg (scope-sym-pos arg)))
+                (when-let* ((bare (bare-symbol arg))
+                            (beg (scope-sym-pos arg)))
                   (unless (memq bare '(&optional &rest))
                     (setq l (scope-local-new bare beg l)))))
               (let ((scope-rx-alist l))
@@ -1116,7 +1118,7 @@ Optional argument LOCAL is a local context to extend."
 (defun scope-face-1 (face)
   (cond
    ((symbol-with-pos-p face)
-    (when-let ((beg (scope-sym-pos face)) (bare (scope-sym-bare face)))
+    (when-let* ((beg (scope-sym-pos face)) (bare (scope-sym-bare face)))
       (scope-report 'face beg (length (symbol-name bare)))))
    ((keywordp (scope-sym-bare (car-safe face)))
     (let ((l face))
@@ -1124,13 +1126,13 @@ Optional argument LOCAL is a local context to extend."
         (let ((kw (car l))
               (vl (cadr l)))
           (setq l (cddr l))
-          (when-let ((bare (scope-sym-bare kw))
-                     ((keywordp bare)))
-            (when-let ((beg (scope-sym-pos kw))
-                       (len (length (symbol-name bare))))
+          (when-let* ((bare (scope-sym-bare kw))
+                      ((keywordp bare)))
+            (when-let* ((beg (scope-sym-pos kw))
+                        (len (length (symbol-name bare))))
               (scope-report 'constant beg len))
             (when (eq bare :inherit)
-              (when-let ((beg (scope-sym-pos vl)) (fbare (scope-sym-bare vl)))
+              (when-let* ((beg (scope-sym-pos vl)) (fbare (scope-sym-bare vl)))
                 (scope-report 'face beg (length (symbol-name fbare))))))))))))
 
 (defun scope-deftype (local name args body)
@@ -1139,8 +1141,8 @@ Optional argument LOCAL is a local context to extend."
   (scope-lambda local args body))
 
 (defun scope-widget-type (_local form)
-  (when-let (((memq (scope-sym-bare (car-safe form)) '(quote \`)))
-             (type (cadr form)))
+  (when-let* (((memq (scope-sym-bare (car-safe form)) '(quote \`)))
+              (type (cadr form)))
     (scope-widget-type-1 type)))
 
 (defun scope-widget-type-1 (type)
@@ -1152,14 +1154,14 @@ Optional argument LOCAL is a local context to extend."
                     (length (symbol-name (bare-symbol type))))))
    ((consp type)
     (let ((head (car type)))
-      (when-let ((beg (scope-sym-pos head)) (bare (scope-sym-bare head)))
+      (when-let* ((beg (scope-sym-pos head)) (bare (scope-sym-bare head)))
         (scope-report 'widget-type beg (length (symbol-name bare))))
-      (when-let ((bare (scope-sym-bare head)))
+      (when-let* ((bare (scope-sym-bare head)))
         (scope-widget-type-arguments bare (cdr type)))))))
 
 (defun scope-widget-type-keyword-arguments (head kw args)
-  (when-let ((beg (scope-sym-pos kw))
-             (len (length (symbol-name (bare-symbol kw)))))
+  (when-let* ((beg (scope-sym-pos kw))
+              (len (length (symbol-name (bare-symbol kw)))))
     (scope-report 'constant beg len))
   (cond
    ((and (memq head '(plist alist))
@@ -1233,7 +1235,7 @@ Optional argument LOCAL is a local context to extend."
          ((setq bare (scope-sym-bare arg))
           (cond
            ((memq bare '(&optional &rest &body _))
-            (when-let ((beg (scope-sym-pos arg)))
+            (when-let* ((beg (scope-sym-pos arg)))
               (scope-report 'ampersand beg (length (symbol-name bare))))
             (scope-defmethod-1 local0 local (cdr args) body))
            ((eq bare '&context)
@@ -1241,7 +1243,7 @@ Optional argument LOCAL is a local context to extend."
                    (expr (car expr-type))
                    (spec (cadr expr-type))
                    (more (cddr args)))
-              (when-let ((beg (scope-sym-pos arg)))
+              (when-let* ((beg (scope-sym-pos arg)))
                 (scope-report 'ampersand beg (length (symbol-name bare))))
               (scope-1 local0 expr)
               (cond
@@ -1310,7 +1312,7 @@ Optional argument LOCAL is a local context to extend."
             (let ((bare (scope-sym-bare head)))
               (if (memq bare '(&optional &rest &body &key &aux &whole &cl-defs &cl-quote))
                   (progn
-                    (when-let ((beg (scope-sym-pos head)))
+                    (when-let* ((beg (scope-sym-pos head)))
                       (scope-report 'ampersand beg (length (symbol-name bare))))
                     (cl-case bare
                       (&optional (scope-cl-lambda-optional local (cadr arglist) (cddr arglist) more body))
@@ -1319,7 +1321,7 @@ Optional argument LOCAL is a local context to extend."
                       (&key (scope-cl-lambda-key local (cadr arglist) (cddr arglist) more body))
                       (&aux (scope-cl-lambda-aux local (cadr arglist) (cddr arglist) more body))
                       (&whole (scope-cl-lambda-1 local (cdr arglist) more body))))
-                (when-let ((beg (scope-sym-pos head)))
+                (when-let* ((beg (scope-sym-pos head)))
                   (scope-report 'variable beg (length (symbol-name bare)) beg))
                 (scope-cl-lambda-1 (scope-local-new bare (scope-sym-pos head) local)
                                    (cdr arglist) more body)))))
@@ -1348,21 +1350,21 @@ Optional argument LOCAL is a local context to extend."
                                                (cons '&optional arglist))
                                        more)
                            body)
-      (when-let ((bare (scope-sym-bare svar)))
-        (when-let ((beg (scope-sym-pos svar)))
+      (when-let* ((bare (scope-sym-bare svar)))
+        (when-let* ((beg (scope-sym-pos svar)))
           (scope-report 'variable beg (length (symbol-name bare)) beg))
         (setq l (scope-local-new bare (scope-sym-pos svar) l)))
-      (when-let ((bare (scope-sym-bare var)))
-        (when-let ((beg (scope-sym-pos var)))
+      (when-let* ((bare (scope-sym-bare var)))
+        (when-let* ((beg (scope-sym-pos var)))
           (scope-report 'variable beg (length (symbol-name bare)) beg))
         (setq l (scope-local-new bare (scope-sym-pos var) l)))
       (cond
        (arglist
         (let ((head (car arglist)))
-          (if-let ((bare (scope-sym-bare head))
-                   ((memq bare '(&rest &body &key &aux))))
+          (if-let* ((bare (scope-sym-bare head))
+                    ((memq bare '(&rest &body &key &aux))))
               (progn
-                (when-let ((beg (scope-sym-pos head)))
+                (when-let* ((beg (scope-sym-pos head)))
                   (scope-report 'ampersand beg (length (symbol-name bare))))
                 (cl-case bare
                   ((&rest &body) (scope-cl-lambda-rest l (cadr arglist) (cddr arglist) more body))
@@ -1376,17 +1378,17 @@ Optional argument LOCAL is a local context to extend."
   (let* ((l local))
     (if (consp var)
         (scope-cl-lambda-1 l var (cons arglist more) body)
-      (when-let ((bare (scope-sym-bare var)))
-        (when-let ((beg (scope-sym-pos var)))
+      (when-let* ((bare (scope-sym-bare var)))
+        (when-let* ((beg (scope-sym-pos var)))
           (scope-report 'variable beg (length (symbol-name bare)) beg))
         (setq l (scope-local-new bare (scope-sym-pos var) l)))
       (cond
        (arglist
         (let ((head (car arglist)))
-          (if-let ((bare (scope-sym-bare head))
-                   ((memq bare '(&key &aux))))
+          (if-let* ((bare (scope-sym-bare head))
+                    ((memq bare '(&key &aux))))
               (progn
-                (when-let ((beg (scope-sym-pos head)))
+                (when-let* ((beg (scope-sym-pos head)))
                   (scope-report 'ampersand beg (length (symbol-name bare))))
                 (cl-case bare
                   (&key (scope-cl-lambda-key l (cadr arglist) (cddr arglist) more body))
@@ -1408,9 +1410,9 @@ Optional argument LOCAL is a local context to extend."
          (not (cddr var))
          ;; VAR is (KEYWORD VAR)
          (setq var (cadr var)))
-    (when-let ((bare (scope-sym-bare kw))
-               ((keywordp bare)))
-      (when-let ((beg (scope-sym-pos kw)))
+    (when-let* ((bare (scope-sym-bare kw))
+                ((keywordp bare)))
+      (when-let* ((beg (scope-sym-pos kw)))
         (scope-report 'constant beg (length (symbol-name bare))))
       (setq l (scope-local-new bare (scope-sym-pos svar) l)))
     (if (consp var)
@@ -1418,21 +1420,21 @@ Optional argument LOCAL is a local context to extend."
                                                (cons '&key arglist))
                                        more)
                            body)
-      (when-let ((bare (scope-sym-bare svar)))
-        (when-let ((beg (scope-sym-pos svar)))
+      (when-let* ((bare (scope-sym-bare svar)))
+        (when-let* ((beg (scope-sym-pos svar)))
           (scope-report 'variable beg (length (symbol-name bare)) beg))
         (setq l (scope-local-new bare (scope-sym-pos svar) l)))
-      (when-let ((bare (scope-sym-bare var)))
-        (when-let ((beg (scope-sym-pos var)))
+      (when-let* ((bare (scope-sym-bare var)))
+        (when-let* ((beg (scope-sym-pos var)))
           (scope-report 'variable beg (length (symbol-name bare)) beg))
         (setq l (scope-local-new bare (scope-sym-pos var) l)))
       (cond
        (arglist
         (let ((head (car arglist)))
-          (if-let ((bare (scope-sym-bare head))
-                   ((memq bare '(&aux &allow-other-keys))))
+          (if-let* ((bare (scope-sym-bare head))
+                    ((memq bare '(&aux &allow-other-keys))))
               (progn
-                (when-let ((beg (scope-sym-pos head)))
+                (when-let* ((beg (scope-sym-pos head)))
                   (scope-report 'ampersand beg (length (symbol-name bare))))
                 (cl-case bare
                   (&aux (scope-cl-lambda-aux l (cadr arglist) (cddr arglist) more body))
@@ -1449,8 +1451,8 @@ Optional argument LOCAL is a local context to extend."
     (scope-1 local init)
     (if (consp var)
         (scope-cl-lambda-1 l var (cons arglist more) body)
-      (when-let ((bare (scope-sym-bare var)))
-        (when-let ((beg (scope-sym-pos var)))
+      (when-let* ((bare (scope-sym-bare var)))
+        (when-let* ((beg (scope-sym-pos var)))
           (scope-report 'variable beg (length (symbol-name bare)) beg))
         (setq l (scope-local-new bare (scope-sym-pos var) l)))
       (cond
@@ -1461,13 +1463,13 @@ Optional argument LOCAL is a local context to extend."
 (defvar scope-macrolet-alist nil)
 
 (defun scope-cl-macrolet (local bindings body)
-  (if-let ((b (car bindings)))
+  (if-let* ((b (car bindings)))
       (let ((name (car b))
             (arglist (cadr b))
             (mbody (cddr b)))
         (scope-cl-lambda local arglist mbody)
-        (when-let ((bare (scope-sym-bare name)))
-          (when-let ((beg (scope-sym-pos name)))
+        (when-let* ((bare (scope-sym-bare name)))
+          (when-let* ((beg (scope-sym-pos name)))
             (scope-report 'macro beg (length (symbol-name bare)) beg))
           (let ((scope-macrolet-alist (scope-local-new bare (scope-sym-pos name) scope-macrolet-alist)))
             (scope-cl-macrolet local (cdr bindings) body))))
@@ -1478,7 +1480,7 @@ Optional argument LOCAL is a local context to extend."
     (while-let ((kw (car-safe body))
                 (bkw (scope-sym-bare kw))
                 ((keywordp bkw)))
-      (when-let ((beg (scope-sym-pos kw)))
+      (when-let* ((beg (scope-sym-pos kw)))
         (scope-report 'constant beg (length (symbol-name bkw))))
       (cl-case bkw
         ((:init-value :keymap :after-hook :initialize)
@@ -1508,8 +1510,8 @@ Optional argument LOCAL is a local context to extend."
              (scope-1 local (pop obod)))
            (setq body (cons bkw (cons nil obod))))))
       (setq body (cddr body)))
-    (when-let ((bare (scope-sym-bare mode)) (beg (scope-sym-pos mode))
-               (typ (if command 'defcmd 'defun)))
+    (when-let* ((bare (scope-sym-bare mode)) (beg (scope-sym-pos mode))
+                (typ (if command 'defcmd 'defun)))
       (scope-report typ beg (length (symbol-name bare)))
       (unless explicit-var
         (scope-report 'defvar beg (length (symbol-name bare)))))
@@ -1637,18 +1639,18 @@ a (possibly empty) list of safe macros.")
 
 (scope-define-analyzer eval (l f form &optional lexical)
   (scope-report-s f 'function)
-  (if-let ((quoted (scope--unqoute form)))
+  (if-let* ((quoted (scope--unqoute form)))
       (scope-1 l quoted)
     (scope-1 l form))
   (scope-1 l lexical))
 
 (scope-define-function-analyzer defalias (sym _def &optional _docstring)
-  (when-let ((quoted (scope--unqoute sym))) (scope-report-s quoted 'defun)))
+  (when-let* ((quoted (scope--unqoute sym))) (scope-report-s quoted 'defun)))
 
 (scope-define-function-analyzer oclosure--define
   (&optional name _docstring parent-names _slots &rest props)
-  (when-let ((quoted (scope--unqoute name))) (scope-report-s quoted 'defoclosure))
-  (when-let ((qs (scope--unqoute parent-names)))
+  (when-let* ((quoted (scope--unqoute name))) (scope-report-s quoted 'defoclosure))
+  (when-let* ((qs (scope--unqoute parent-names)))
     (dolist (q qs)
       (scope-report-s q 'oclosure)))
   (while-let ((kw (car-safe props))
@@ -1657,21 +1659,21 @@ a (possibly empty) list of safe macros.")
     (scope-report-s kw 'constant)
     (cl-case bkw
       (:predicate
-       (when-let ((q (scope--unqoute (cadr props)))) (scope-report-s q 'defun))))
+       (when-let* ((q (scope--unqoute (cadr props)))) (scope-report-s q 'defun))))
     (setq props (cddr props))))
 
 (scope-define-function-analyzer define-charset
   (&optional name _docstring &rest _props)
-  (when-let ((quoted (scope--unqoute name))) (scope-report-s quoted 'defcharset)))
+  (when-let* ((quoted (scope--unqoute name))) (scope-report-s quoted 'defcharset)))
 
 (scope-define-function-analyzer define-charset-alias
   (&optional alias charset)
-  (when-let ((quoted (scope--unqoute alias))) (scope-report-s quoted 'defcharset))
-  (when-let ((quoted (scope--unqoute charset))) (scope-report-s quoted 'charset)))
+  (when-let* ((quoted (scope--unqoute alias))) (scope-report-s quoted 'defcharset))
+  (when-let* ((quoted (scope--unqoute charset))) (scope-report-s quoted 'charset)))
 
 (scope-define-function-analyzer charset-chars
   (&optional charset &rest _)
-  (when-let ((quoted (scope--unqoute charset))) (scope-report-s quoted 'charset)))
+  (when-let* ((quoted (scope--unqoute charset))) (scope-report-s quoted 'charset)))
 
 (dolist (sym '(charset-description charset-info charset-iso-final-char
                                    charset-long-name charset-plist
@@ -1686,29 +1688,29 @@ a (possibly empty) list of safe macros.")
 
 (scope-define-function-analyzer define-coding-system
   (&optional name _docstring &rest _props)
-  (when-let ((quoted (scope--unqoute name))) (scope-report-s quoted 'defcoding)))
+  (when-let* ((quoted (scope--unqoute name))) (scope-report-s quoted 'defcoding)))
 
 (scope-define-function-analyzer define-coding-system-alias
   (&optional alias coding-system)
-  (when-let ((quoted (scope--unqoute alias))) (scope-report-s quoted 'defcoding))
-  (when-let ((quoted (scope--unqoute coding-system))) (scope-report-s quoted 'coding)))
+  (when-let* ((quoted (scope--unqoute alias))) (scope-report-s quoted 'defcoding))
+  (when-let* ((quoted (scope--unqoute coding-system))) (scope-report-s quoted 'coding)))
 
 (scope-define-function-analyzer decode-coding-region
   (&optional _start _end coding-system &rest _)
-  (when-let ((quoted (scope--unqoute coding-system))) (scope-report-s quoted 'coding)))
+  (when-let* ((quoted (scope--unqoute coding-system))) (scope-report-s quoted 'coding)))
 
 (put 'encode-coding-region 'scope-analyzer #'scope--analyze-decode-coding-region)
 
 (scope-define-function-analyzer decode-coding-string
   (&optional _string coding-system &rest _)
-  (when-let ((quoted (scope--unqoute coding-system))) (scope-report-s quoted 'coding)))
+  (when-let* ((quoted (scope--unqoute coding-system))) (scope-report-s quoted 'coding)))
 
 (dolist (sym '(encode-coding-char encode-coding-string))
   (put sym 'scope-analyzer #'scope--analyze-decode-coding-string))
 
 (scope-define-function-analyzer coding-system-mnemonic
   (&optional coding-system &rest _)
-  (when-let ((quoted (scope--unqoute coding-system))) (scope-report-s quoted 'coding)))
+  (when-let* ((quoted (scope--unqoute coding-system))) (scope-report-s quoted 'coding)))
 
 (dolist (sym '(add-to-coding-system-list
                check-coding-system
@@ -1747,7 +1749,7 @@ a (possibly empty) list of safe macros.")
   (put sym 'scope-analyzer #'scope--analyze-coding-system-mnemonic))
 
 (scope-define-function-analyzer thing-at-point (thing &optional _)
-  (when-let ((quoted (scope--unqoute thing))) (scope-report-s quoted 'thing)))
+  (when-let* ((quoted (scope--unqoute thing))) (scope-report-s quoted 'thing)))
 
 (dolist (sym '( forward-thing
                 beginning-of-thing
@@ -1756,43 +1758,43 @@ a (possibly empty) list of safe macros.")
   (put sym 'scope-analyzer #'scope--analyze-thing-at-point))
 
 (scope-define-function-analyzer bounds-of-thing-at-mouse (_event thing)
-  (when-let ((quoted (scope--unqoute thing))) (scope-report-s quoted 'thing)))
+  (when-let* ((quoted (scope--unqoute thing))) (scope-report-s quoted 'thing)))
 
 (scope-define-function-analyzer thing-at-mouse (_event thing &optional _)
-  (when-let ((quoted (scope--unqoute thing))) (scope-report-s quoted 'thing)))
+  (when-let* ((quoted (scope--unqoute thing))) (scope-report-s quoted 'thing)))
 
 (scope-define-function-analyzer custom-declare-variable (sym _default _doc &rest args)
-  (when-let ((quoted (scope--unqoute sym))) (scope-report-s quoted 'defvar))
+  (when-let* ((quoted (scope--unqoute sym))) (scope-report-s quoted 'defvar))
   (while-let ((kw (car-safe args))
               (bkw (scope-sym-bare kw))
               ((keywordp bkw)))
     (cl-case bkw
       (:type
-       (when-let ((quoted (scope--unqoute (cadr args)))) (scope-widget-type-1 quoted)))
+       (when-let* ((quoted (scope--unqoute (cadr args)))) (scope-widget-type-1 quoted)))
       (:group
-       (when-let ((quoted (scope--unqoute (cadr args)))) (scope-report-s quoted 'group))))
+       (when-let* ((quoted (scope--unqoute (cadr args)))) (scope-report-s quoted 'group))))
     (setq args (cddr args))))
 
 (scope-define-function-analyzer custom-declare-group (sym _members _doc &rest args)
-  (when-let ((quoted (scope--unqoute sym))) (scope-report-s quoted 'group))
+  (when-let* ((quoted (scope--unqoute sym))) (scope-report-s quoted 'group))
   (while-let ((kw (car-safe args))
               (bkw (scope-sym-bare kw))
               ((keywordp bkw)))
     (cl-case bkw
       (:group
-       (when-let ((quoted (scope--unqoute (cadr args)))) (scope-report-s quoted 'group))))
+       (when-let* ((quoted (scope--unqoute (cadr args)))) (scope-report-s quoted 'group))))
     (setq args (cddr args))))
 
 (scope-define-function-analyzer custom-declare-face (face spec _doc &rest args)
-  (when-let ((q (scope--unqoute face))) (scope-report-s q 'defface))
-  (when-let ((q (scope--unqoute spec)))
+  (when-let* ((q (scope--unqoute face))) (scope-report-s q 'defface))
+  (when-let* ((q (scope--unqoute spec)))
     (when (consp q) (dolist (s q) (scope-face (cdr s)))))
   (while-let ((kw (car-safe args))
               (bkw (scope-sym-bare kw))
               ((keywordp bkw)))
     (cl-case bkw
       (:group
-       (when-let ((q (scope--unqoute (cadr args)))) (scope-report-s q 'group))))
+       (when-let* ((q (scope--unqoute (cadr args)))) (scope-report-s q 'group))))
     (setq args (cddr args))))
 
 (defun scope-typep (type)
@@ -1808,17 +1810,17 @@ a (possibly empty) list of safe macros.")
       (scope-report-s (cadr type) 'function))))))
 
 (scope-define-function-analyzer cl-typep (_val type)
-  (when-let ((q (scope--unqoute type)))
+  (when-let* ((q (scope--unqoute type)))
     (scope-typep q)))
 
 (scope-define-function-analyzer pulse-momentary-highlight-region (_start _end &optional face)
-  (when-let ((q (scope--unqoute face))) (scope-face q)))
+  (when-let* ((q (scope--unqoute face))) (scope-face q)))
 
 (scope--define-function-analyzer throw (tag _value) non-local-exit
-  (when-let ((q (scope--unqoute tag))) (scope-report-s q 'throw-tag)))
+  (when-let* ((q (scope--unqoute tag))) (scope-report-s q 'throw-tag)))
 
 (scope--define-function-analyzer signal (error-symbol &optional _data) non-local-exit
-  (when-let ((q (scope--unqoute error-symbol))) (scope-report-s q 'condition)))
+  (when-let* ((q (scope--unqoute error-symbol))) (scope-report-s q 'condition)))
 
 (scope--define-function-analyzer kill-emacs                     (&rest _) non-local-exit)
 (scope--define-function-analyzer abort-recursive-edit           (&rest _) non-local-exit)
@@ -1832,22 +1834,22 @@ a (possibly empty) list of safe macros.")
 
 (scope-define-function-analyzer run-hooks (&rest hooks)
   (dolist (hook hooks)
-    (when-let ((q (scope--unqoute hook))) (scope-report-s q 'variable))))
+    (when-let* ((q (scope--unqoute hook))) (scope-report-s q 'variable))))
 
 (scope-define-function-analyzer fboundp (symbol)
-  (when-let ((q (scope--unqoute symbol))) (scope-report-s q 'function)))
+  (when-let* ((q (scope--unqoute symbol))) (scope-report-s q 'function)))
 
 (scope-define-function-analyzer overlay-put (&optional _ov prop val)
-  (when-let ((q (scope--unqoute prop))
-             ((eq (scope-sym-bare q) 'face))
-             (face (scope--unqoute val)))
+  (when-let* ((q (scope--unqoute prop))
+              ((eq (scope-sym-bare q) 'face))
+              (face (scope--unqoute val)))
     (scope-face face)))
 
 (scope-define-function-analyzer add-face-text-property (&optional _start _end face &rest _)
-  (when-let ((q (scope--unqoute face))) (scope-face q)))
+  (when-let* ((q (scope--unqoute face))) (scope-face q)))
 
 (scope-define-function-analyzer boundp (var &rest _)
-  (when-let ((q (scope--unqoute var))) (scope-report-s q 'variable)))
+  (when-let* ((q (scope--unqoute var))) (scope-report-s q 'variable)))
 
 (dolist (sym '( set symbol-value define-abbrev-table
                 special-variable-p local-variable-p
@@ -1859,23 +1861,23 @@ a (possibly empty) list of safe macros.")
   (put sym 'scope-analyzer #'scope--analyze-boundp))
 
 (scope-define-function-analyzer defvaralias (new base &optional _docstring)
-  (when-let ((q (scope--unqoute new))) (scope-report-s q 'defvar))
-  (when-let ((q (scope--unqoute base))) (scope-report-s q 'variable)))
+  (when-let* ((q (scope--unqoute new))) (scope-report-s q 'defvar))
+  (when-let* ((q (scope--unqoute base))) (scope-report-s q 'variable)))
 
 (scope-define-function-analyzer define-error (name _message &optional parent)
-  (when-let ((q (scope--unqoute name))) (scope-report-s q 'condition))
-  (when-let ((q (scope--unqoute parent)))
+  (when-let* ((q (scope--unqoute name))) (scope-report-s q 'condition))
+  (when-let* ((q (scope--unqoute parent)))
     (dolist (p (ensure-list q)) (scope-report-s p 'condition))))
 
 (scope-define-function-analyzer featurep (feature &rest _)
-  (when-let ((q (scope--unqoute feature))) (scope-report-s q 'feature)))
+  (when-let* ((q (scope--unqoute feature))) (scope-report-s q 'feature)))
 
 (put 'provide 'scope-analyzer #'scope--analyze-featurep)
 (put 'require 'scope-analyzer #'scope--analyze-featurep)
 
 (scope-define-function-analyzer put-text-property (&optional _ _ prop val _)
   (when (memq (scope-sym-bare (scope--unqoute prop)) '(mouse-face face))
-    (when-let ((q (scope--unqoute val))) (scope-face q))))
+    (when-let* ((q (scope--unqoute val))) (scope-face q))))
 
 (put 'remove-overlays 'scope-analyzer #'scope--analyze-put-text-property)
 
@@ -1883,61 +1885,61 @@ a (possibly empty) list of safe macros.")
   (while props
     (cl-case (scope-sym-bare (scope--unqoute (car props)))
       ((face mouse-face)
-       (when-let ((q (scope--unqoute (cadr props)))) (scope-face q))))
+       (when-let* ((q (scope--unqoute (cadr props)))) (scope-face q))))
     (setq props (cddr props))))
 
 (scope-define-function-analyzer eieio-defclass-internal (name superclasses _ _)
-  (when-let ((q (scope--unqoute name))) (scope-report-s q 'type))
-  (when-let ((q (scope--unqoute superclasses)))
+  (when-let* ((q (scope--unqoute name))) (scope-report-s q 'type))
+  (when-let* ((q (scope--unqoute superclasses)))
     (dolist (sup q) (scope-report-s sup 'type))))
 
 (scope-define-function-analyzer cl-struct-define
   (name _doc parent _type _named _slots _children _tab _print)
-  (when-let ((q (scope--unqoute name)))   (scope-report-s q 'type))
-  (when-let ((q (scope--unqoute parent))) (scope-report-s q 'type)))
+  (when-let* ((q (scope--unqoute name)))   (scope-report-s q 'type))
+  (when-let* ((q (scope--unqoute parent))) (scope-report-s q 'type)))
 
 (scope-define-function-analyzer define-widget (name class _doc &rest args)
-  (when-let ((q (scope--unqoute name)))  (scope-report-s q 'widget-type))
-  (when-let ((q (scope--unqoute class))) (scope-report-s q 'widget-type))
+  (when-let* ((q (scope--unqoute name)))  (scope-report-s q 'widget-type))
+  (when-let* ((q (scope--unqoute class))) (scope-report-s q 'widget-type))
   (while-let ((kw (car-safe args))
               (bkw (scope-sym-bare kw))
               ((keywordp bkw)))
     (cl-case bkw
       (:type
-       (when-let ((q (scope--unqoute (cadr args)))) (scope-widget-type-1 q)))
+       (when-let* ((q (scope--unqoute (cadr args)))) (scope-widget-type-1 q)))
       (:args
-       (when-let ((q (scope--unqoute (cadr args)))) (mapc #'scope-widget-type-1 q))))
+       (when-let* ((q (scope--unqoute (cadr args)))) (mapc #'scope-widget-type-1 q))))
     (setq args (cddr args))))
 
 (scope-define-function-analyzer provide-theme (name &rest _)
-  (when-let ((q (scope--unqoute name))) (scope-report-s q 'theme)))
+  (when-let* ((q (scope--unqoute name))) (scope-report-s q 'theme)))
 
 (put 'custom-declare-theme 'scope-analyzer #'scope--analyze-provide-theme)
 
 (scope-define-function-analyzer eieio-oref (_obj slot)
-  (when-let ((q (scope--unqoute slot))) (scope-report-s q 'slot)))
+  (when-let* ((q (scope--unqoute slot))) (scope-report-s q 'slot)))
 
 (dolist (fun '(slot-boundp slot-makeunbound slot-exists-p eieio-oref-default))
   (put fun 'scope-analyzer #'scope--analyze-eieio-oref))
 
 (scope-define-function-analyzer eieio-oset (_obj slot _value)
-  (when-let ((q (scope--unqoute slot))) (scope-report-s q 'slot)))
+  (when-let* ((q (scope--unqoute slot))) (scope-report-s q 'slot)))
 
 (put 'eieio-oset-default 'scope-analyzer #'scope--analyze-eieio-oset)
 
 (scope-define-function-analyzer derived-mode-p (modes &rest _obsolete)
-  (when-let ((q (scope--unqoute modes))) (scope-report-s q 'major-mode)))
+  (when-let* ((q (scope--unqoute modes))) (scope-report-s q 'major-mode)))
 
 (scope-define-function-analyzer scope-report (type &rest _)
-  (when-let ((q (scope--unqoute type))) (scope-report-s q 'symbol-type)))
+  (when-let* ((q (scope--unqoute type))) (scope-report-s q 'symbol-type)))
 
 (scope-define-function-analyzer scope-report-s (&optional _sym type)
-  (when-let ((q (scope--unqoute type))) (scope-report-s q 'symbol-type)))
+  (when-let* ((q (scope--unqoute type))) (scope-report-s q 'symbol-type)))
 
 (scope-define-function-analyzer icons--register (&optional name parent _spec _doc kws)
-  (when-let ((q (scope--unqoute name))) (scope-report-s q 'deficon))
-  (when-let ((q (scope--unqoute parent))) (scope-report-s q 'icon))
-  (when-let ((q (scope--unqoute kws)))
+  (when-let* ((q (scope--unqoute name))) (scope-report-s q 'deficon))
+  (when-let* ((q (scope--unqoute parent))) (scope-report-s q 'icon))
+  (when-let* ((q (scope--unqoute kws)))
     (while-let ((kw (car-safe q))
                 (bkw (scope-sym-bare kw))
                 ((keywordp bkw)))
@@ -1947,16 +1949,16 @@ a (possibly empty) list of safe macros.")
       (setq q (cddr q)))))
 
 (scope-define-function-analyzer setopt--set (&optional var _val)
-  (when-let ((q (scope--unqoute var))) (scope-report-s q 'variable)))
+  (when-let* ((q (scope--unqoute var))) (scope-report-s q 'variable)))
 
 (scope-define-function-analyzer autoload (&optional func _file _doc int &rest _)
-  (when-let ((q (scope--unqoute func))) (scope-report-s q 'function))
-  (when-let ((q (scope--unqoute int)) ((listp q)))
+  (when-let* ((q (scope--unqoute func))) (scope-report-s q 'function))
+  (when-let* ((q (scope--unqoute int)) ((listp q)))
     (dolist (mode q) (scope-report-s mode 'major-mode))))
 
 (scope-define-function-analyzer minibuffer--define-completion-category (&optional name parents &rest _)
-  (when-let ((q (scope--unqoute name)))    (scope-report-s q 'completion-category-definition))
-  (when-let ((q (scope--unqoute parents)))
+  (when-let* ((q (scope--unqoute name)))    (scope-report-s q 'completion-category-definition))
+  (when-let* ((q (scope--unqoute parents)))
     (dolist (p (ensure-list q)) (scope-report-s p 'completion-category))))
 
 ;; (scope-define-macro-analyzer define-completion-category (l &optional name parent &rest rest)
@@ -1965,7 +1967,7 @@ a (possibly empty) list of safe macros.")
 ;;   (scope-n l rest))
 
 (scope-define-function-analyzer completion-table-with-category (&optional category _table)
-  (when-let ((q (scope--unqoute category))) (scope-report-s q 'completion-category)))
+  (when-let* ((q (scope--unqoute category))) (scope-report-s q 'completion-category)))
 
 (defun scope--easy-menu-do-define-menu (menu)
   (let ((items (cdr menu)))
@@ -1994,11 +1996,11 @@ a (possibly empty) list of safe macros.")
       ((consp item) (scope--easy-menu-do-define-menu item))))))
 
 (scope-define-function-analyzer easy-menu-do-define (&optional _symbol _maps _doc menu)
-  (when-let ((q (scope--unqoute menu)))
+  (when-let* ((q (scope--unqoute menu)))
     (scope--easy-menu-do-define-menu q)))
 
 (scope-define-function-analyzer define-key (&optional _keymaps _key def _remove)
-  (when-let ((q (scope--unqoute def)))
+  (when-let* ((q (scope--unqoute def)))
     (cond
      ((eq (scope-sym-bare (car-safe q)) 'menu-item)
       (let ((fn (caddr q)) (it (cdddr q)))
@@ -2095,7 +2097,7 @@ a (possibly empty) list of safe macros.")
   (if labels
       (let* ((label (car labels))
              (bare (scope-sym-bare label)))
-        (when-let ((beg (scope-sym-pos label)))
+        (when-let* ((beg (scope-sym-pos label)))
           (scope-report 'label beg (length (symbol-name bare)) beg))
         (let ((scope-label-alist
                (if bare
@@ -2106,9 +2108,9 @@ a (possibly empty) list of safe macros.")
 
 (scope-define-macro-analyzer go (_l label)
   ;; TODO: Change to a local macro defintion induced by `cl-tagbody'.
-  (when-let ((bare (scope-sym-bare label))
-             (pos (alist-get bare scope-label-alist))
-             (beg (scope-sym-pos label)))
+  (when-let* ((bare (scope-sym-bare label))
+              (pos (alist-get bare scope-label-alist))
+              (beg (scope-sym-pos label)))
     (scope-report 'label beg (length (symbol-name bare)) pos)))
 
 (scope-define-macro-analyzer rx-define (l name &rest rest)
@@ -2177,7 +2179,7 @@ a (possibly empty) list of safe macros.")
     (scope-report-s kw 'constant)
     (cl-case bkw
       (:face
-       (if-let ((q (scope--unqoute (cadr props)))) (scope-face-1 q)
+       (if-let* ((q (scope--unqoute (cadr props)))) (scope-face-1 q)
          (scope-1 l (cadr props))))
       (otherwise (scope-1 l (cadr props))))
     (setq props (cddr props))))
@@ -2227,7 +2229,7 @@ a (possibly empty) list of safe macros.")
   (scope-report-s f 'macro)
   (scope-1 l alist)
   (let ((scope-current-let-alist-form
-         (cons (or (scope-sym-pos f) (cons 'gen (incf scope-counter)))
+         (cons (or (scope-sym-pos f) (cons 'gen (cl-incf scope-counter)))
                (scope-sym-pos f))))
     (scope-n l body)))
 
