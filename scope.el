@@ -1857,6 +1857,7 @@ a (possibly empty) list of safe macros.")
                 get-variable-watchers remove-variable-watcher
                 default-value set-default make-local-variable
                 buffer-local-value add-to-list add-to-history find-buffer
+                customize-set-variable set-variable
                 add-hook remove-hook run-hook-with-args run-hook-wrapped))
   (put sym 'scope-analyzer #'scope--analyze-boundp))
 
