@@ -2184,6 +2184,10 @@ a (possibly empty) list of safe macros.")
 
 (put 'setq-default 'scope-analyzer #'scope--analyze-setq-local)
 
+(scope-define-macro-analyzer ignore-error (l &optional condition &rest body)
+  (scope-report-s condition 'condition)
+  (scope-n l body))
+
 (scope-define-macro-analyzer cl-defun (l name arglist &rest body)
   (scope-cl-defun l name arglist body))
 
