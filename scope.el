@@ -2037,7 +2037,8 @@ a (possibly empty) list of safe macros.")
      ((or (symbolp q) (symbol-with-pos-p q))
       (scope-report-s q 'function)))))
 
-(scope-define-function-analyzer eval-after-load (&optional _file form)
+(scope-define-function-analyzer eval-after-load (&optional file form)
+  (when-let* ((q (scope--unqoute file))) (scope-report-s q 'feature))
   (when-let* ((q (scope--unqoute form))) (scope-1 nil q)))
 
 (scope-define-macro-analyzer define-globalized-minor-mode (l global mode turn-on &rest body)
