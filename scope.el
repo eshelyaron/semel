@@ -2016,6 +2016,9 @@ a (possibly empty) list of safe macros.")
      ((or (symbolp q) (symbol-with-pos-p q))
       (scope-report-s q 'function)))))
 
+(scope-define-function-analyzer eval-after-load (&optional _file form)
+  (when-let* ((q (scope--unqoute form))) (scope-1 nil q)))
+
 (scope-define-macro-analyzer define-globalized-minor-mode (l global mode turn-on &rest body)
   (scope-report-s mode 'function)
   (scope-report-s turn-on 'function)
