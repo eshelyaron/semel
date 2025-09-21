@@ -230,6 +230,11 @@
   :help (cl-constantly "Theme")
   :completion (cl-constantly #'custom-theme-p))
 
+(scope-define-symbol-type deftheme (theme)
+  :doc "Custom theme definitions."
+  :imenu "Theme"
+  :help (cl-constantly "Theme definition"))
+
 (scope-define-symbol-type thing ()
   :doc "`thing-at-point' \"thing\" identifiers."
   :face 'font-lock-type-face
@@ -1915,7 +1920,22 @@ a (possibly empty) list of safe macros.")
 (scope-define-function-analyzer provide-theme (name &rest _)
   (when-let* ((q (scope--unqoute name))) (scope-report-s q 'theme)))
 
-(put 'custom-declare-theme 'scope-analyzer #'scope--analyze-provide-theme)
+(dolist (sym '(enable-theme disable-theme load-theme custom-theme-p))
+  (put sym 'scope-analyzer #'scope--analyze-provide-theme))
+
+(scope-define-function-analyzer custom-theme-set-variables (theme &rest args)
+  (when-let* ((q (scope--unqoute theme))) (scope-report-s q 'theme))
+  (dolist (arg args)
+    (when-let* ((q (scope--unqoute arg)))
+      (when (consp q)
+        (scope-report-s (pop q) 'variable)
+        (when (consp q)
+          (scope-1 nil (pop q))
+          (dolist (request (car (cdr-safe q)))
+            (scope-report-s request 'feature)))))))
+
+(scope-define-function-analyzer custom-declare-theme (name &rest _)
+  (when-let* ((q (scope--unqoute name))) (scope-report-s q 'deftheme)))
 
 (scope-define-function-analyzer eieio-oref (_obj slot)
   (when-let* ((q (scope--unqoute slot))) (scope-report-s q 'slot)))
