@@ -1565,11 +1565,17 @@ Optional argument LOCAL is a local context to extend."
            (scope-mode-line-construct-1 (cadr format))
            (scope-mode-line-construct-1 (caddr format))))))))))
 
-(defvar scope-safe-macros t
-  "Specify which macros are safe to expand.
+(defcustom scope-safe-macros nil
+  "Specify which macros are safe to expand during code analysis.
 
 If this is t, macros are considered safe by default.  Otherwise, this is
-a (possibly empty) list of safe macros.")
+a (possibly empty) list of safe macros.
+
+Note that this option only affects analysis of untrusted code, for
+trusted code macro expansion is always safe."
+  :type '(choice (const :tag "Trust all macros" t)
+                 (repeat :tag "Trust these macros" symbol))
+  :group 'lisp)
 
 (defvar scope-unsafe-macros
   '( static-if cl-eval-when eval-when-compile eval-and-compile let-when-compile
