@@ -65,13 +65,13 @@
 (defface semel-function-call '((t :inherit font-lock-function-call-face))
   "Face for highlighting function calls in Emacs Lisp code.")
 
-(defface semel-non-local-exit '((t :inherit elisp-function-call :underline "red"))
+(defface semel-non-local-exit '((t :inherit semel-function-call :underline "red"))
   "Face for highlighting function calls in Emacs Lisp code.")
 
 (defface semel-macro-call '((t :inherit font-lock-keyword-face))
   "Face for highlighting macro calls in Emacs Lisp code.")
 
-(defface semel-special-form '((t :inherit elisp-macro-call))
+(defface semel-special-form '((t :inherit semel-macro-call))
   "Face for highlighting special forms in Emacs Lisp code.")
 
 (defface semel-throw-tag '((t :inherit font-lock-constant-face))
