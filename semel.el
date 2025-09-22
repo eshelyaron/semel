@@ -151,11 +151,16 @@
        (entered (semel-highlight-variable pos))
        (left (semel-unhighlight-variable old))))))
 
+(defcustom semel-add-help-echo t
+  "Whether to add `help-echo' property to symbols while highlighting."
+  :type 'boolean)
+
 (defun semel--annotate-symbol-with-help-echo (type beg end def)
-  (put-text-property
-   beg end 'help-echo
-   (when-let* ((fun (scope-get-symbol-type-property type :help)))
-     (funcall fun beg end def))))
+  (when semel-add-help-echo
+    (put-text-property
+     beg end 'help-echo
+     (when-let* ((fun (scope-get-symbol-type-property type :help)))
+       (funcall fun beg end def)))))
 
 (defun semel-fontify-symbol (type sym len id &optional def)
   (semel--annotate-symbol-with-help-echo type sym (+ sym len) def)
