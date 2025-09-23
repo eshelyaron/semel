@@ -50,7 +50,9 @@
 (defface semel-condition '((t :foreground "red"))
   "Face for highlighting `condition-case' conditions in Emacs Lisp code.")
 
-(defface semel-major-mode-name '((t :foreground "#006400"))
+(defface semel-major-mode-name
+  '((((background light)) :foreground "#006400")
+    (((background dark))  :foreground "#10e400"))
   "Face for highlighting major mode names in Emacs Lisp code.")
 
 (defface semel-face '((t :inherit font-lock-type-face))
