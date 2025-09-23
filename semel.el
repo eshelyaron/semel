@@ -72,6 +72,11 @@
 (defface semel-non-local-exit '((t :inherit semel-function-reference :underline "red"))
   "Face for highlighting function calls in Emacs Lisp code.")
 
+(defface semel-unknown-call
+  '((((background light)) :foreground "#2f4f4f")
+    (((background dark))  :foreground "#add8e6"))
+  "Face for highlighting unknown functions/macros in Emacs Lisp code.")
+
 (defface semel-macro-call '((t :inherit font-lock-keyword-face))
   "Face for highlighting macro calls in Emacs Lisp code.")
 

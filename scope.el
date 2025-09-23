@@ -169,6 +169,11 @@
 (scope-define-symbol-type command (function)
   :doc "Command names.")
 
+(scope-define-symbol-type unknown (function)
+  :doc "Unknown symbols at function position."
+  :face 'semel-unknown-call
+  :help (cl-constantly "Unknown function/macro"))
+
 (scope-define-symbol-type non-local-exit (function)
   :doc "Functions that do not return."
   :face 'semel-non-local-exit
@@ -2352,8 +2357,11 @@ trusted code macro expansion is always safe."
                     (append (mapcar #'list scope-unsafe-macros) macroexpand-all-environment))
                    (expanded (ignore-errors (macroexpand-1 form macroexpand-all-environment))))
               (scope-1 local expanded)))))
-         ((or (functionp bare) (memq bare scope-local-functions) scope-assume-func-p)
-          (scope-report-s f 'function) (scope-n local forms))))))
+         ((or (functionp bare) (memq bare scope-local-functions))
+          (scope-report-s f 'function) (scope-n local forms))
+         (t
+          (scope-report-s f 'unknown)
+          (when scope-assume-func-p (scope-n local forms)))))))
    ((symbol-with-pos-p form) (scope-s local form))))
 
 (defun scope-n (local body) (dolist (form body) (scope-1 local form)))
