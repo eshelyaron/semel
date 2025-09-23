@@ -4,7 +4,7 @@
 
 ;; Author: Eshel Yaron <me@eshelyaron.com>
 ;; Keywords: lisp
-;; Package-Version: 0.1.0
+;; Package-Version: 0.1.1
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -62,10 +62,12 @@
 (defface semel-symbol-type-definition '((t :foreground "#00008b" :inherit font-lock-function-name-face))
   "Face for highlighting symbol type names in Emacs Lisp code.")
 
-(defface semel-function-call '((t :inherit font-lock-function-call-face))
-  "Face for highlighting function calls in Emacs Lisp code.")
+(defface semel-function-reference '((t :inherit font-lock-function-call-face))
+  "Face for highlighting references to function names in Emacs Lisp code.")
 
-(defface semel-non-local-exit '((t :inherit semel-function-call :underline "red"))
+(define-obsolete-face-alias 'semel-function-call 'semel-function-reference "0.1.1")
+
+(defface semel-non-local-exit '((t :inherit semel-function-reference :underline "red"))
   "Face for highlighting function calls in Emacs Lisp code.")
 
 (defface semel-macro-call '((t :inherit font-lock-keyword-face))

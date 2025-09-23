@@ -158,7 +158,7 @@
 
 (scope-define-symbol-type function (callable)
   :doc "Function names."
-  :face 'semel-function-call
+  :face 'semel-function-reference
   :help (lambda (beg end def)
           (cond ((equal beg def) "Local function definition")
                 (def             "Local function call")
