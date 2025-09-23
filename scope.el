@@ -744,7 +744,7 @@ Optional argument LOCAL is a local context to extend."
                   (symbol-with-pos-pos name) (length (symbol-name bare)) pos))
   (scope-1 local result))
 
-(defvar scope-assume-func-p nil)
+(defvar scope-assume-func nil)
 
 (defun scope-sharpquote (local arg)
   (cond
@@ -752,7 +752,7 @@ Optional argument LOCAL is a local context to extend."
     (let ((bare (bare-symbol arg))
           (beg (scope-sym-pos arg)))
       (cond
-       ((or (functionp bare) (memq bare scope-local-functions) scope-assume-func-p)
+       ((or (functionp bare) (memq bare scope-local-functions) scope-assume-func)
         (when beg
           (scope-report 'function beg (length (symbol-name bare)))))
        ((or (assq bare scope-flet-alist) (consp arg))
@@ -2361,7 +2361,7 @@ trusted code macro expansion is always safe."
           (scope-report-s f 'function) (scope-n local forms))
          (t
           (scope-report-s f 'unknown)
-          (when scope-assume-func-p (scope-n local forms)))))))
+          (when scope-assume-func (scope-n local forms)))))))
    ((symbol-with-pos-p form) (scope-s local form))))
 
 (defun scope-n (local body) (dolist (form body) (scope-1 local form)))
