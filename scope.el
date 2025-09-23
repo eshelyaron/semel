@@ -1591,7 +1591,7 @@ trusted code macro expansion is always safe."
        (or (eq scope-safe-macros t)
            (memq macro scope-safe-macros)
            (get macro 'safe-macro)
-           (trusted-content-p))))
+           (and (fboundp 'trusted-content-p) (trusted-content-p)))))
 
 (defvar warning-minimum-log-level)
 
