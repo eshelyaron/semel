@@ -1859,6 +1859,20 @@ trusted code macro expansion is always safe."
 (scope-define-function-analyzer add-face-text-property (&optional _start _end face &rest _)
   (when-let* ((q (scope--unqoute face))) (scope-face q)))
 
+(scope-define-function-analyzer facep (&optional face &rest _)
+  (when-let* ((q (scope--unqoute face))) (scope-report-s q 'face)))
+
+(dolist (sym '( check-face face-id face-differs-from-default-p
+                face-name face-all-attributes face-attribute
+                face-foreground face-background face-stipple
+                face-underline-p face-inverse-video-p face-bold-p
+                face-italic-p face-extend-p face-documentation
+                set-face-documentation set-face-attribute
+                set-face-font set-face-background set-face-foreground
+                set-face-stipple set-face-underline set-face-inverse-video
+                set-face-bold set-face-italic set-face-extend))
+  (put sym 'scope-analyzer #'scope--analyze-facep))
+
 (scope-define-function-analyzer boundp (var &rest _)
   (when-let* ((q (scope--unqoute var))) (scope-report-s q 'variable)))
 
@@ -2267,6 +2281,11 @@ trusted code macro expansion is always safe."
          (cons (or (scope-sym-pos f) (cons 'gen (cl-incf scope-counter)))
                (scope-sym-pos f))))
     (scope-n l body)))
+
+(scope-define-macro-analyzer define-obsolete-face-alias (l &optional obs cur when)
+  (when-let* ((q (scope--unqoute obs))) (scope-report-s q 'defface))
+  (when-let* ((q (scope--unqoute cur))) (scope-report-s q 'face))
+  (scope-1 l when))
 
 (scope-define-special-form-analyzer let (l bindings &rest body)
   (scope-let-1 l l bindings body))
