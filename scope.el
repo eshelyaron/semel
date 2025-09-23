@@ -200,7 +200,7 @@
 
 (scope-define-symbol-type warning-type ()
   :doc "Byte-compilation warning types."
-  :face 'font-lock-type-face
+  :face 'semel-warning-type
   :help (cl-constantly "Warning type")
   :completion (cl-constantly (lambda (sym) (memq sym byte-compile-warning-types))))
 
@@ -213,7 +213,7 @@
 
 (scope-define-symbol-type declaration ()
   :doc "Function attribute declaration types."
-  :face 'font-lock-variable-use-face
+  :face 'semel-declaration
   :help (cl-constantly "Declaration")
   :completion (cl-constantly
                (lambda (sym) (or (alist-get sym macro-declarations-alist)
@@ -237,7 +237,7 @@
 
 (scope-define-symbol-type thing ()
   :doc "`thing-at-point' \"thing\" identifiers."
-  :face 'font-lock-type-face
+  :face 'semel-thing
   :help (cl-constantly "Thing (text object)")
   :completion
   (cl-constantly
@@ -252,31 +252,31 @@
 
 (scope-define-symbol-type slot ()
   :doc "EIEIO slots."
-  :face 'font-lock-builtin-face
+  :face 'semel-slot
   :help (cl-constantly "Slot"))
 
 (scope-define-symbol-type widget-type ()
   :doc "Widget types."
-  :face 'font-lock-type-face
+  :face 'semel-widget-type
   :help (cl-constantly "Widget type")
   :completion (cl-constantly (lambda (sym) (get sym 'widget-type)))
   :namespace 'widget-type)
 
 (scope-define-symbol-type type ()
   :doc "ELisp object type names."
-  :face 'font-lock-type-face
+  :face 'semel-type
   :help (cl-constantly "Type")
   :completion (cl-constantly (lambda (sym) (get sym 'cl--class))))
 
 (scope-define-symbol-type group ()
   :doc "Customization groups."
-  :face 'font-lock-type-face
+  :face 'semel-group
   :help (cl-constantly "Customization group")
   :completion (cl-constantly (lambda (sym) (get sym 'group-documentation))))
 
 (scope-define-symbol-type nnoo-backend ()
   :doc "`nnoo' backend names."
-  :face 'font-lock-type-face
+  :face 'semel-nnoo-backend
   :help (cl-constantly "`nnoo' backend"))
 
 (scope-define-symbol-type condition ()
@@ -296,18 +296,18 @@
 
 (scope-define-symbol-type ampersand ()
   :doc "Argument list markers, such as `&optional' and `&rest'."
-  :face 'font-lock-type-face
+  :face 'semel-ampersand
   :help (cl-constantly "Arguments separator"))
 
 (scope-define-symbol-type constant ()
   :doc "Self-evaluating symbols."
-  :face 'font-lock-builtin-face
+  :face 'semel-constant
   :help (cl-constantly "Constant"))
 
 (scope-define-symbol-type defun ()
   :doc "Function definitions."
   :definition t
-  :face 'font-lock-function-name-face
+  :face 'semel-defun
   :help (cl-constantly "Function definition")
   :imenu "Function"
   :namespace 'function)
@@ -320,7 +320,7 @@
 (scope-define-symbol-type defvar ()
   :doc "Variable definitions."
   :definition t
-  :face 'font-lock-variable-name-face
+  :face 'semel-defvar
   :help (cl-constantly "Special variable definition")
   :imenu "Variable"
   :namespace 'variable)
@@ -328,7 +328,7 @@
 (scope-define-symbol-type defface ()
   :doc "Face definitions."
   :definition t
-  :face 'font-lock-variable-name-face
+  :face 'semel-defface
   :help (cl-constantly "Face definition")
   :imenu "Face"
   :namespace 'face)
@@ -353,7 +353,7 @@
 
 (scope-define-symbol-type icon ()
   :doc "Icon names."
-  :face 'font-lock-type-face
+  :face 'semel-icon
   :help (cl-constantly "Icon")
   :completion (cl-constantly (lambda (sym) (get sym 'icon--properties)))
   :namespace 'icon)
@@ -361,14 +361,14 @@
 (scope-define-symbol-type deficon ()
   :doc "Icon definitions."
   :definition t
-  :face 'font-lock-type-face
+  :face 'semel-deficon
   :help (cl-constantly "Icon definition")
   :imenu "Icon"
   :namespace 'icon)
 
 (scope-define-symbol-type oclosure ()
   :doc "OClosure type names."
-  :face 'font-lock-type-face
+  :face 'semel-oclosure
   :help (lambda (beg end _def)
           (if-let* ((sym (intern (buffer-substring-no-properties beg end))))
               (lambda (&rest _)
@@ -383,14 +383,14 @@
 (scope-define-symbol-type defoclosure ()
   :doc "OClosure type definitions."
   :definition t
-  :face 'font-lock-type-face
+  :face 'semel-defoclosure
   :help (cl-constantly "OClosure type definition")
   :imenu "OClosure type"
   :namespace 'oclosure)
 
 (scope-define-symbol-type coding ()
   :doc "Coding system names."
-  :face 'font-lock-type-face
+  :face 'semel-coding
   :help (lambda (beg end _def)
           (if-let* ((sym (intern (buffer-substring-no-properties beg end))))
               (lambda (&rest _)
@@ -404,14 +404,14 @@
 (scope-define-symbol-type defcoding ()
   :doc "Coding system definitions."
   :definition t
-  :face 'font-lock-type-face
+  :face 'semel-defcoding
   :help (cl-constantly "Coding system definition")
   :imenu "Coding system"
   :namespace 'coding)
 
 (scope-define-symbol-type charset ()
   :doc "Charset names."
-  :face 'font-lock-type-face
+  :face 'semel-charset
   :help (lambda (beg end _def)
           (if-let* ((sym (intern (buffer-substring-no-properties beg end))))
               (lambda (&rest _)
@@ -425,7 +425,7 @@
 (scope-define-symbol-type defcharset ()
   :doc "Charset definitions."
   :definition t
-  :face 'font-lock-type-face
+  :face 'semel-defcharset
   :help (cl-constantly "Charset definition")
   :imenu "Charset"
   :namespace 'charset)
@@ -437,7 +437,7 @@
 
 (scope-define-symbol-type completion-category ()
   :doc "Completion categories."
-  :face 'font-lock-type-face
+  :face 'semel-completion-category
   :help (lambda (beg end _def)
           (if-let* ((sym (intern (buffer-substring-no-properties beg end))))
               (lambda (&rest _)
@@ -451,7 +451,7 @@
 (scope-define-symbol-type completion-category-definition ()
   :doc "Completion category definitions."
   :definition t
-  :face 'font-lock-type-face
+  :face 'semel-completion-category-definition
   :help (cl-constantly "Completion category definition")
   :imenu "Completion category"
   :namespace 'completion-category)

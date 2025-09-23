@@ -98,6 +98,76 @@
 (defface semel-variable-at-point '((t :inherit bold))
   "Face for highlighting (all occurrences of) the variable at point.")
 
+(defface semel-warning-type '((t :inherit font-lock-type-face))
+  "Face for highlighting byte-compilation warning type names in Emacs Lisp.")
+
+(defface semel-declaration '((t :inherit font-lock-variable-use-face))
+  "Face for highlighting function attribute declaration type names.")
+
+(defface semel-thing '((t :inherit font-lock-type-face))
+  "Face for highlighting `thing-at-point' \"thing\" names in Emacs Lisp.")
+
+(defface semel-slot '((t :inherit font-lock-builtin-face))
+  "Face for highlighting EIEIO slot names.")
+
+(defface semel-widget-type '((t :inherit font-lock-type-face))
+  "Face for highlighting widget type names in Emacs Lisp code.")
+
+(defface semel-type '((t :inherit font-lock-type-face))
+  "Face for highlighting object type names in Emacs Lisp code.")
+
+(defface semel-group '((t :inherit font-lock-type-face))
+  "Face for highlighting customization group names in Emacs Lisp code.")
+
+(defface semel-nnoo-backend '((t :inherit font-lock-type-face))
+  "Face for highlighting `nnoo' backend names in Emacs Lisp code.")
+
+(defface semel-ampersand '((t :inherit font-lock-type-face))
+  "Face for highlighting argument list markers, such as `&optional'.")
+
+(defface semel-constant '((t :inherit font-lock-builtin-face))
+  "Face for highlighting self-evaluating symbols in Emacs Lisp code.")
+
+(defface semel-defun '((t :inherit font-lock-function-name-face))
+  "Face for highlighting function definitions in Emacs Lisp code.")
+
+(defface semel-defvar '((t :inherit font-lock-variable-name-face))
+  "Face for highlighting variable definitions in Emacs Lisp code.")
+
+(defface semel-defface '((t :inherit font-lock-variable-name-face))
+  "Face for highlighting face definitions in Emacs Lisp code.")
+
+(defface semel-icon '((t :inherit font-lock-type-face))
+  "Face for highlighting icon name in Emacs Lisp code.")
+
+(defface semel-deficon '((t :inherit semel-icon))
+  "Face for highlighting icon definitions in Emacs Lisp code.")
+
+(defface semel-oclosure '((t :inherit font-lock-type-face))
+  "Face for highlighting OClosure type names in Emacs Lisp code.")
+
+(defface semel-defoclosure '((t :inherit semel-oclosure))
+  "Face for highlighting OClosure type definitions in Emacs Lisp code.")
+
+(defface semel-coding '((t :inherit font-lock-type-face))
+  "Face for highlighting coding system names in Emacs Lisp code.")
+
+(defface semel-defcoding '((t :inherit semel-coding))
+  "Face for highlighting coding system definitions in Emacs Lisp code.")
+
+(defface semel-charset '((t :inherit font-lock-type-face))
+  "Face for highlighting charset names in Emacs Lisp code.")
+
+(defface semel-defcharset '((t :inherit semel-charset))
+  "Face for highlighting charset definitions in Emacs Lisp code.")
+
+(defface semel-completion-category '((t :inherit font-lock-type-face))
+  "Face for highlighting completion category names in Emacs Lisp code.")
+
+(defface semel-completion-category-definition
+  '((t :inherit semel-completion-category))
+  "Face for highlighting completion category definitions in Emacs Lisp code.")
+
 (defun semel--function-help-echo (sym &rest _)
   (when (fboundp sym)
     (with-temp-buffer
